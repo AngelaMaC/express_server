@@ -202,9 +202,14 @@ campsiteRouter.route('/:campsiteId/comments/:commentId')
 .delete(authenticate.verifyUser, (req, res, next) => {
     Campsite.findById(req.params.campsiteId)
     .then(campsite => {
+        if (!campsite || !campsite.comments.id(req.params.commentId)) {
+            err = new Error(`Comment ${req.params.commentId} not found.`);
+            err.status = 404;
+            return next(err);
+        }
         const comment = campsite.comments.id(req.params.commentId);
-        if (campsite && comment && comment.author._id.equals(req.user._id)) {
-            comment.remove();
+        if (campsite && comment.author._id.equals(req.user._id)) {
+            campsite.comments.id(req.params.commentId).remove();
             campsite.save()
             .then(campsite => {
                 res.statusCode = 200;
